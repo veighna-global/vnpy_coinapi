@@ -4,10 +4,9 @@ import requests
 import pytz
 import json
 
-
 from vnpy.trader.datafeed import BaseDatafeed
 from vnpy.trader.setting import SETTINGS
-from vnpy.trader.constant import Interval, Exchange
+from vnpy.trader.constant import Interval
 from vnpy.trader.object import BarData, TickData, HistoryRequest
 
 INTERVAL_VT2CA = {
@@ -17,10 +16,7 @@ INTERVAL_VT2CA = {
     Interval.TICK: 0
 }
 
-CHINA_TZ = pytz.timezone("Asia/Shanghai")
-china_list = ["OKEX", "HUOBI", "BINANCE", "BYBIT", "DERIBIT", "FTX", "GATEIO"]
 UTC_TZ = pytz.utc
-utc_list = ["BITMEX", "BITFINEX", "COINBASE", "BITSTAMP"]
 
 
 def to_ca_symbol(symbol, exchange):
@@ -68,16 +64,14 @@ class CoinapiDatafeed(BaseDatafeed):
         )
 
         if response.status_code != 200:
+            print(response.text)
             return None
 
         text = json.loads(response.text)
         data: List[BarData] = []
         for i in text:
             dt = datetime.strptime(i["time_period_start"], "%Y-%m-%dT%H:%M:%S.%f0Z")
-            if exchange.value in china_list:
-                dt = CHINA_TZ.localize(dt)
-            else:
-                dt = UTC_TZ.localize(dt)
+            dt = UTC_TZ.localize(dt)
             bar = BarData(
                 symbol=symbol,
                 exchange=exchange,
@@ -96,3 +90,15 @@ class CoinapiDatafeed(BaseDatafeed):
 
     def query_tick_history(self, req: HistoryRequest) -> Optional[List[TickData]]:
         """"""
+
+    def query_symbol_id(self) -> List:
+        """查询所有可用代码"""
+        url = self.res_api + "/v1/symbols"
+        headers = {'X-CoinAPI-Key': self.password}
+        response = requests.request(
+            method="GET",
+            url=url,
+            headers=headers
+        )
+        text = json.loads(response.text)
+        return text
