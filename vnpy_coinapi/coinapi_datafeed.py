@@ -7,7 +7,7 @@ import json
 from vnpy.trader.datafeed import BaseDatafeed
 from vnpy.trader.setting import SETTINGS
 from vnpy.trader.constant import Interval
-from vnpy.trader.object import BarData, TickData, HistoryRequest
+from vnpy.trader.object import BarData, HistoryRequest
 
 
 INTERVAL_VT2CA = {
@@ -70,7 +70,7 @@ class CoinapiDatafeed(BaseDatafeed):
         
         data = json.loads(response.text)
         for d in data:
-            dt = datetime.strptime(i["time_period_start"], "%Y-%m-%dT%H:%M:%S.%f0Z")
+            dt = datetime.strptime(d["time_period_start"], "%Y-%m-%dT%H:%M:%S.%f0Z")
             dt = UTC_TZ.localize(dt)
 
             bar = BarData(
