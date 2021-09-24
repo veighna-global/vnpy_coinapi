@@ -9,6 +9,7 @@ from vnpy.trader.setting import SETTINGS
 from vnpy.trader.constant import Interval
 from vnpy.trader.object import BarData, TickData, HistoryRequest
 
+
 INTERVAL_VT2CA = {
     Interval.MINUTE: "1MIN",
     Interval.HOUR: "1HRS",
@@ -18,6 +19,8 @@ INTERVAL_VT2CA = {
 
 UTC_TZ = pytz.utc
 
+COINAPI_HOST = "https://rest.coinapi.io"
+
 
 def to_ca_symbol(symbol, exchange):
     """将交易所代码转换为CoinAPI代码"""
@@ -26,10 +29,9 @@ def to_ca_symbol(symbol, exchange):
 
 class CoinapiDatafeed(BaseDatafeed):
     """CoinAPI数据服务接口"""
+
     def __init__(self):
         """"""
-        self.res_api = "https://rest.coinapi.io"
-        self.username: str = SETTINGS["datafeed.username"]
         self.password: str = SETTINGS["datafeed.password"]
 
     def query_bar_history(self, req: HistoryRequest) -> Optional[List[BarData]]:
@@ -45,17 +47,14 @@ class CoinapiDatafeed(BaseDatafeed):
         time_start = datetime.strftime(start, "%Y-%m-%dT%H:%M:%S")
         time_end = datetime.strftime(end, "%Y-%m-%dT%H:%M:%S")
 
-        tq_interval = INTERVAL_VT2CA.get(interval)
-        if not tq_interval:
-            return None
-
-        url = self.res_api + f"/v1/ohlcv/{symbol_id}/history?"
+        url = COINAPI_HOST + f"/v1/ohlcv/{symbol_id}/history?"
         params = {
             "period_id": period_id,
             "time_start": time_start,
             "time_end": time_end
         }
         headers = {'X-CoinAPI-Key': self.password}
+
         response = requests.request(
             method="GET",
             url=url,
@@ -67,38 +66,25 @@ class CoinapiDatafeed(BaseDatafeed):
             print(response.text)
             return None
 
-        text = json.loads(response.text)
-        data: List[BarData] = []
-        for i in text:
+        bars: List[BarData] = []
+        
+        data = json.loads(response.text)
+        for d in data:
             dt = datetime.strptime(i["time_period_start"], "%Y-%m-%dT%H:%M:%S.%f0Z")
             dt = UTC_TZ.localize(dt)
+
             bar = BarData(
                 symbol=symbol,
                 exchange=exchange,
                 interval=interval,
                 datetime=dt,
-                open_price=i["price_open"],
-                high_price=i["price_high"],
-                low_price=i["price_low"],
-                close_price=i["price_close"],
-                volume=i["volume_traded"],
+                open_price=d["price_open"],
+                high_price=d["price_high"],
+                low_price=d["price_low"],
+                close_price=d["price_close"],
+                volume=d["volume_traded"],
                 gateway_name="CA",
             )
-            data.append(bar)
+            bars.append(bar)
 
-        return data
-
-    def query_tick_history(self, req: HistoryRequest) -> Optional[List[TickData]]:
-        """"""
-
-    def query_symbol_id(self) -> List:
-        """查询所有可用代码"""
-        url = self.res_api + "/v1/symbols"
-        headers = {'X-CoinAPI-Key': self.password}
-        response = requests.request(
-            method="GET",
-            url=url,
-            headers=headers
-        )
-        text = json.loads(response.text)
-        return text
+        return bars

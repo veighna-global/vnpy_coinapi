@@ -23,7 +23,6 @@
 * BYBIT
 * COINBASE
 * DERIBIT
-* GATEIO
 * BITSTAMP
 * FTX
 
@@ -50,9 +49,10 @@ python setup.py install
 
 ## 使用
 
-在VN Trader中配置时，需要填写以下字段信息：
+在vn.py中使用CoinAPI时，需要在全局配置中填写以下字段信息：
 
-| 字段名            | 值 |
-|---------           |---- |
-|datafeed.username   | API KEY|
-|datafeed.password   | API KEY|
+|名称|含义|必填|举例|
+|---------|----|---|---|
+|datafeed.name|名称|是|coinapi|
+|datafeed.username|用户名|否|key|
+|datafeed.password|密码|是|1131329-896E-4FD2-9F-85DF1E8|
